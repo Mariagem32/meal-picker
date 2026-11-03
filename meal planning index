@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f3ea">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>Meal Picker</title>
+  <style>
+    :root { color-scheme: light; --ink:#24302b; --muted:#66736c; --green:#28634d; --cream:#f7f3ea; --paper:#fffdf8; --line:#e4dfd3; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--cream); color:var(--ink); font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
+    main { width:min(100% - 28px, 680px); margin:0 auto; padding:34px 0 48px; }
+    header { margin-bottom:24px; }
+    .eyebrow { color:var(--green); font-weight:700; letter-spacing:.08em; text-transform:uppercase; font-size:.78rem; }
+    h1 { margin:.15rem 0; font-size:clamp(2rem,8vw,3.2rem); line-height:1.1; }
+    header p { color:var(--muted); margin:.5rem 0 0; }
+    section { background:var(--paper); border:1px solid var(--line); border-radius:18px; padding:20px; margin:16px 0; box-shadow:0 3px 12px #24302b0a; }
+    h2 { margin:0 0 12px; font-size:1.2rem; }
+    button { border:0; border-radius:12px; background:var(--green); color:white; padding:13px 17px; font:700 1rem system-ui,sans-serif; cursor:pointer; min-height:48px; }
+    button.secondary { background:#e9efe9; color:var(--green); }
+    button:focus-visible, textarea:focus-visible { outline:3px solid #91bca5; outline-offset:2px; }
+    .plan { list-style:none; padding:0; margin:16px 0 0; }
+    .plan li { display:flex; justify-content:space-between; gap:12px; border-top:1px solid var(--line); padding:11px 2px; }
+    .plan li:first-child { border-top:0; }
+    .day { color:var(--muted); font-weight:650; min-width:108px; }
+    .meal { font-weight:650; text-align:right; }
+    textarea { display:block; width:100%; min-height:180px; border:1px solid var(--line); border-radius:12px; padding:12px; background:white; color:var(--ink); font:inherit; resize:vertical; }
+    .hint, #status { color:var(--muted); font-size:.92rem; }
+    .actions { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:12px; }
+    #status { min-height:1.4em; margin:10px 0 0; }
+    @media (max-width:420px) { section { padding:16px; } .day { min-width:94px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div class="eyebrow">Your little meal helper</div>
+      <h1>Meal Picker</h1>
+      <p>Take the guesswork out of weekday dinners.</p>
+    </header>
+
+    <section aria-labelledby="plan-title">
+      <h2 id="plan-title">This week's plan</h2>
+      <button id="make-plan" type="button">Pick five meals</button>
+      <ul class="plan" id="plan" aria-live="polite"></ul>
+      <p id="status" role="status"></p>
+    </section>
+
+    <section aria-labelledby="meals-title">
+      <h2 id="meals-title">My meal ideas</h2>
+      <p class="hint">Put one meal on each line. Your list is saved in this browser on this device.</p>
+      <textarea id="meal-list" aria-label="Your meal ideas"></textarea>
+      <div class="actions">
+        <button class="secondary" id="save-meals" type="button">Save meal ideas</button>
+      </div>
+    </section>
+  </main>
+  <script>
+    const starterMeals = [
+      "Pasta", "Stir-fry", "Soup", "Tacos", "Omelette", "Curry",
+      "Jacket potato", "Pizza", "Salad", "Burgers", "Roast dinner",
+      "Fish and chips", "Chilli", "Risotto", "Wraps", "Lasagne",
+      "Fajitas", "Sausage and mash", "Noodles", "Quesadillas"
+    ];
+    const storageKey = "meal-picker-meals-v1";
+    const mealBox = document.getElementById("meal-list");
+    const planBox = document.getElementById("plan");
+    const status = document.getElementById("status");
+    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+
+    let meals;
+    try {
+      meals = JSON.parse(localStorage.getItem(storageKey)) || starterMeals;
+      if (!Array.isArray(meals)) meals = starterMeals;
+    } catch { meals = starterMeals; }
+    mealBox.value = meals.join("\n");
+
+    document.getElementById("save-meals").addEventListener("click", () => {
+      meals = mealBox.value.split("\n").map(meal => meal.trim()).filter(Boolean);
+      localStorage.setItem(storageKey, JSON.stringify(meals));
+      status.textContent = "Your meal ideas are saved on this device.";
+    });
+
+    document.getElementById("make-plan").addEventListener("click", () => {
+      meals = mealBox.value.split("\n").map(meal => meal.trim()).filter(Boolean);
+      if (meals.length < 5) {
+        status.textContent = "Add at least five meal ideas to make a weekday plan.";
+        planBox.replaceChildren();
+        return;
+      }
+      localStorage.setItem(storageKey, JSON.stringify(meals));
+      const shuffled = [...meals];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      planBox.replaceChildren(...days.map((day, i) => {
+        const item = document.createElement("li");
+        const dayName = document.createElement("span");
+        dayName.className = "day";
+        dayName.textContent = day;
+        const mealName = document.createElement("span");
+        mealName.className = "meal";
+        mealName.textContent = shuffled[i];
+        item.append(dayName, mealName);
+        return item;
+      }));
+      status.textContent = "Here is your new plan. No meals repeat this week.";
+    });
+  </script>
+</body>
+</html>
