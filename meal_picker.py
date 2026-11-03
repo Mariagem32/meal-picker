@@ -1,7 +1,7 @@
 import random
 
 meals = [
-    "Pasta", "Stir-fry", "Soup", "Tacos", "Omelette",
+    "Pasta", "Stir-fry", "Tacos", "Omelette",
     "Curry", "Jacket potato", "Pizza", "Salad", "Burgers",
     "Roast dinner", "Fish and chips", "Chilli", "pesto pasta", "Wraps",
     "Lasagne", "Fajitas", "Sausage and mash", "Noodles", "Quesadillas"
